@@ -136,6 +136,7 @@ textarea { resize: vertical; }
 .preview { max-width: 240px; border-radius: 8px; box-shadow: var(--shadow-sm); }
 
 .error { color: var(--danger); font-size: 14px; }
+.success { color: var(--resolved); font-size: 14px; }
 
 .detail { display: flex; flex-direction: column; gap: 12px; }
 .back { color: var(--muted); text-decoration: none; }

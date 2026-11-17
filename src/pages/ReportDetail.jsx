@@ -9,6 +9,7 @@ export default function ReportDetail() {
   const [report, setReport] = useState(undefined)
   const [syncing, setSyncing] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageKind, setMessageKind] = useState('')
 
   const refresh = () => getReport(id).then(setReport)
 
@@ -33,8 +34,10 @@ export default function ReportDetail() {
       await markSynced(id)
       await refresh()
       setMessage('Uploaded to server.')
+      setMessageKind('ok')
     } catch {
       setMessage('Upload failed. Check connection and try again.')
+      setMessageKind('err')
     } finally {
       setSyncing(false)
     }
@@ -72,7 +75,7 @@ export default function ReportDetail() {
         {report.synced ? 'Synced to server' : 'Stored on device only'}
       </p>
 
-      {message && <p className="error">{message}</p>}
+      {message && <p className={messageKind === 'ok' ? 'success' : 'error'}>{message}</p>}
 
       <div className="row actions">
         <Link to={`/edit/${id}`} className="btn primary">Edit</Link>

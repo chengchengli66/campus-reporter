@@ -12,6 +12,7 @@ export default function ReportList() {
   const reports = useLiveQuery(listReports, [], [])
   const [syncing, setSyncing] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageKind, setMessageKind] = useState('')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [status, setStatus] = useState('All')
@@ -51,8 +52,10 @@ export default function ReportList() {
         await markSynced(report.id)
       }
       setMessage('All pending reports uploaded.')
+      setMessageKind('ok')
     } catch {
       setMessage('Upload failed. Check connection and try again.')
+      setMessageKind('err')
     } finally {
       setSyncing(false)
     }
@@ -114,7 +117,7 @@ export default function ReportList() {
         </select>
       </div>
 
-      {message && <p className="error">{message}</p>}
+      {message && <p className={messageKind === 'ok' ? 'success' : 'error'}>{message}</p>}
 
       {filtered.length === 0 ? (
         <div className="empty">

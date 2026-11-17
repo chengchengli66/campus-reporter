@@ -20,7 +20,6 @@ export default function Layout({ children }) {
         <Link to="/" className="brand">Campus Reporter</Link>
         <nav className="nav">
           <NavLink to="/" end>Reports</NavLink>
-          <NavLink to="/new">New report</NavLink>
         </nav>
         <span className={`status ${online ? 'ok' : 'off'}`}>
           {online ? (serverUp ? 'Server online' : 'Local only') : 'Offline'}

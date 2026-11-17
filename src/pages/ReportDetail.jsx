@@ -61,9 +61,11 @@ export default function ReportDetail() {
       <p className="description">{report.description || 'No description provided.'}</p>
 
       <p className="meta">
-        {report.latitude != null && report.longitude != null
-          ? `GPS: ${report.latitude.toFixed(6)}, ${report.longitude.toFixed(6)}`
-          : 'No GPS coordinates recorded.'}
+        {report.address
+          ? report.address
+          : report.latitude != null && report.longitude != null
+            ? `GPS: ${report.latitude.toFixed(6)}, ${report.longitude.toFixed(6)}`
+            : 'No location recorded.'}
       </p>
 
       <p className={`sync ${report.synced ? 'yes' : 'no'}`}>

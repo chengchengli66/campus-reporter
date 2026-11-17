@@ -25,6 +25,7 @@ export async function createReport(data) {
     photo: data.photo || null,
     latitude: data.latitude ?? null,
     longitude: data.longitude ?? null,
+    address: data.address || null,
     timestamp: now,
     status: 'open',
     synced: false,

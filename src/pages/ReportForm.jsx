@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CATEGORIES, createReport, updateReport } from '../db'
+import { reverseGeocode, geocodeAddress } from '../geocode'
 
 export default function ReportForm({ report }) {
   const navigate = useNavigate()
@@ -12,7 +13,10 @@ export default function ReportForm({ report }) {
   const [photo, setPhoto] = useState(report?.photo ?? null)
   const [latitude, setLatitude] = useState(report?.latitude ?? null)
   const [longitude, setLongitude] = useState(report?.longitude ?? null)
+  const [address, setAddress] = useState(report?.address ?? '')
+  const [addressQuery, setAddressQuery] = useState('')
   const [locating, setLocating] = useState(false)
+  const [geocoding, setGeocoding] = useState(false)
   const [error, setError] = useState('')
 
   const isEditing = Boolean(report)
@@ -31,10 +35,19 @@ export default function ReportForm({ report }) {
       return
     }
     setLocating(true)
+    setError('')
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLatitude(pos.coords.latitude)
-        setLongitude(pos.coords.longitude)
+      async (pos) => {
+        const lat = pos.coords.latitude
+        const lon = pos.coords.longitude
+        setLatitude(lat)
+        setLongitude(lon)
+        try {
+          const addr = await reverseGeocode(lat, lon)
+          setAddress(addr ?? '')
+        } catch {
+          // Keep coordinates even if the address lookup fails
+        }
         setLocating(false)
       },
       (err) => {
@@ -43,6 +56,36 @@ export default function ReportForm({ report }) {
       },
       { enableHighAccuracy: true, timeout: 10000 }
     )
+  }
+
+  const useAddress = async () => {
+    const query = addressQuery.trim()
+    if (!query) {
+      setError('Please enter an address first.')
+      return
+    }
+    setGeocoding(true)
+    setError('')
+    try {
+      const result = await geocodeAddress(query)
+      if (result) {
+        setLatitude(result.latitude)
+        setLongitude(result.longitude)
+        setAddress(result.address)
+      } else {
+        setLatitude(null)
+        setLongitude(null)
+        setAddress(query)
+        setError('Address not found on the map; saved as text only.')
+      }
+    } catch {
+      setLatitude(null)
+      setLongitude(null)
+      setAddress(query)
+      setError('Address lookup failed; saved as text only.')
+    } finally {
+      setGeocoding(false)
+    }
   }
 
   const submit = async (event) => {
@@ -54,7 +97,7 @@ export default function ReportForm({ report }) {
       return
     }
 
-    const payload = { title, category, description, photo, latitude, longitude }
+    const payload = { title, category, description, photo, latitude, longitude, address }
 
     if (isEditing) {
       await updateReport(report.id, payload)
@@ -113,10 +156,29 @@ export default function ReportForm({ report }) {
             hidden
           />
           {photo && <img src={photo} alt="Captured" className="preview" />}
+
+          <div className="address-block">
+            <label>
+              Or enter an address manually
+              <input
+                value={addressQuery}
+                onChange={(e) => setAddressQuery(e.target.value)}
+                placeholder="e.g. Library Street, Paisley"
+              />
+            </label>
+            <div className="row">
+              <button type="button" className="btn" onClick={useAddress} disabled={geocoding}>
+                {geocoding ? 'Looking up…' : 'Use this address'}
+              </button>
+            </div>
+          </div>
+
           <p className="meta">
-            {latitude != null && longitude != null
-              ? `GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
-              : 'No location captured yet.'}
+            {address
+              ? address
+              : latitude != null && longitude != null
+                ? `GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+                : 'No location captured yet.'}
           </p>
         </div>
 

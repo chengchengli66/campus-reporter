@@ -114,6 +114,7 @@ textarea { resize: vertical; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 
 .photo-block { display: flex; flex-direction: column; gap: 10px; }
+.address-block { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
 .preview { max-width: 240px; border-radius: 8px; box-shadow: var(--shadow-sm); }
 
 .error { color: var(--danger); font-size: 14px; }

@@ -10,11 +10,16 @@ export default function ReportDetail() {
   const [syncing, setSyncing] = useState(false)
   const [message, setMessage] = useState('')
   const [messageKind, setMessageKind] = useState('')
+  const [online, setOnline] = useState(navigator.onLine)
 
   const refresh = () => getReport(id).then(setReport)
 
   useEffect(() => {
     getReport(id).then(setReport)
+    const update = () => setOnline(navigator.onLine)
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    return () => window.removeEventListener('online', update)
   }, [id])
 
   if (report === undefined) return <p>Loading…</p>
@@ -27,6 +32,11 @@ export default function ReportDetail() {
   }
 
   const handleUpload = async () => {
+    if (!navigator.onLine) {
+      setMessage('Queued for upload; it will sync automatically when back online.')
+      setMessageKind('ok')
+      return
+    }
     setSyncing(true)
     setMessage('')
     try {
@@ -80,7 +90,7 @@ export default function ReportDetail() {
       <div className="row actions">
         <Link to={`/edit/${id}`} className="btn primary">Edit</Link>
         <button className="btn" onClick={handleUpload} disabled={syncing || report.synced}>
-          {syncing ? 'Uploading…' : report.synced ? 'Uploaded' : 'Upload to server'}
+          {syncing ? 'Uploading…' : report.synced ? 'Uploaded' : online ? 'Upload to server' : 'Queue for sync'}
         </button>
         <button className="btn" onClick={toggleStatus}>
           Mark {report.status === 'open' ? 'resolved' : 'open'}

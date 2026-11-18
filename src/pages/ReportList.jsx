@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { listReports, markSynced, CATEGORIES } from '../db'
-import { uploadReport } from '../api'
+import { listReports, CATEGORIES } from '../db'
+import { syncPendingReports } from '../sync'
 
 function formatTime(iso) {
   return new Date(iso).toLocaleString()
@@ -13,11 +13,36 @@ export default function ReportList() {
   const [syncing, setSyncing] = useState(false)
   const [message, setMessage] = useState('')
   const [messageKind, setMessageKind] = useState('')
+  const [online, setOnline] = useState(navigator.onLine)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [status, setStatus] = useState('All')
 
   const pending = reports?.filter((r) => !r.synced) ?? []
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine)
+    const autoSync = async () => {
+      setOnline(true)
+      setMessage('Back online — syncing pending reports…')
+      setMessageKind('ok')
+      try {
+        const n = await syncPendingReports()
+        setMessage(n > 0 ? `Synced ${n} pending report(s).` : 'You are all synced.')
+        setMessageKind('ok')
+      } catch {
+        setMessage('Sync failed. Check connection and try again.')
+        setMessageKind('err')
+      }
+    }
+    window.addEventListener('online', autoSync)
+    window.addEventListener('offline', update)
+    if (navigator.onLine) autoSync()
+    return () => {
+      window.removeEventListener('online', autoSync)
+      window.removeEventListener('offline', update)
+    }
+  }, [])
 
   const filtered = useMemo(() => {
     if (!reports) return []
@@ -44,17 +69,19 @@ export default function ReportList() {
   }, [reports])
 
   const syncPending = async () => {
+    if (!navigator.onLine) {
+      setMessage('Queued; pending reports will sync automatically when back online.')
+      setMessageKind('ok')
+      return
+    }
     setSyncing(true)
     setMessage('')
     try {
-      for (const report of pending) {
-        await uploadReport(report)
-        await markSynced(report.id)
-      }
-      setMessage('All pending reports uploaded.')
+      const n = await syncPendingReports()
+      setMessage(n > 0 ? `Synced ${n} pending report(s).` : 'You are all synced.')
       setMessageKind('ok')
     } catch {
-      setMessage('Upload failed. Check connection and try again.')
+      setMessage('Sync failed. Check connection and try again.')
       setMessageKind('err')
     } finally {
       setSyncing(false)
@@ -73,7 +100,7 @@ export default function ReportList() {
         <div className="row">
           {pending.length > 0 && (
             <button className="btn" onClick={syncPending} disabled={syncing}>
-              {syncing ? 'Syncing…' : `Sync ${pending.length} pending`}
+              {syncing ? 'Syncing…' : online ? `Sync ${pending.length} pending` : 'Queue pending'}
             </button>
           )}
           <Link to="/new" className="btn primary">+ New report</Link>

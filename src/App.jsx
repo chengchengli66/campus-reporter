@@ -5,6 +5,7 @@ import ReportList from './pages/ReportList'
 import ReportForm from './pages/ReportForm'
 import ReportDetail from './pages/ReportDetail'
 import { getReport } from './db'
+import { mergeServerReports } from './sync'
 
 function EditReport() {
   const { id } = useParams()
@@ -21,6 +22,10 @@ function EditReport() {
 }
 
 export default function App() {
+  useEffect(() => {
+    mergeServerReports()
+  }, [])
+
   return (
     <HashRouter>
       <Layout>

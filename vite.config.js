@@ -41,6 +41,7 @@ export default defineConfig({
     devApi(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       manifest: {
         name: 'Campus Reporter',
         short_name: 'Reporter',
@@ -55,7 +56,15 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png}']
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,ico}'],
+        navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/nominatim\.openstreetmap\.org\/.*/,
+            handler: 'NetworkOnly'
+          }
+        ]
       }
     })
   ]
